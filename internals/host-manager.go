@@ -35,8 +35,6 @@ type Host struct {
 type HostManger interface {
 	AddSubDomain(HostData) (HostResponse, error)
 	DeleteSubDomain(HostData) (HostResponse, error)
-	GetHosts() []Host
-	*PersistedHost
 }
 
 func DeleteHostRecord(slice []HostRecord, index int) []HostRecord {

@@ -12,7 +12,7 @@ type Properties struct {
 	dev_url                     string
 }
 
-func CreateProperties() *Properties {
+func createProperties() *Properties {
 	props := Properties{
 		HOST_IP:                     os.Getenv("HOST_IP"),
 		DEV_NAMECHEAP_API_KEY:       os.Getenv("DEV_NAMECHEAP_API_KEY"),

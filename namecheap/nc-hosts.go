@@ -2,12 +2,18 @@ package namecheap
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/thrillee/namecheap-dns-manager/internals"
 )
 
 type Namecheap struct {
-	*internals.PersistedHost
+	db         *internals.PersistedHost
+	apiManager nameCheapAPI
+}
+
+func CreateNameCheapHostManager(db *internals.PersistedHost, isLive bool) *Namecheap {
+	return &Namecheap{db: db, apiManager: *createNameCheapAPI(isLive)}
 }
 
 func formDomain(sld, tld string) string {
@@ -17,7 +23,7 @@ func formDomain(sld, tld string) string {
 func (nc *Namecheap) AddSubDomain(data internals.HostData) (internals.HostResponse, error) {
 	newDomain := formDomain(data.SLD, data.TLD)
 
-	hostRecords, ok := nc.Data[newDomain]
+	hostRecords, ok := nc.db.Data[newDomain]
 	if !ok {
 		hostRecords = internals.HostData{
 			SLD:     data.SLD,
@@ -27,10 +33,13 @@ func (nc *Namecheap) AddSubDomain(data internals.HostData) (internals.HostRespon
 	}
 
 	duplicatedRecords := []string{}
+	persistedRecords := hostRecords.Records
 	for _, storedRecords := range hostRecords.Records {
 		for _, dataRecord := range data.Records {
 			if storedRecords.HostName == dataRecord.HostName {
 				duplicatedRecords = append(duplicatedRecords, dataRecord.HostName)
+			} else {
+				persistedRecords = append(persistedRecords, dataRecord)
 			}
 		}
 	}
@@ -39,16 +48,29 @@ func (nc *Namecheap) AddSubDomain(data internals.HostData) (internals.HostRespon
 		return internals.HostResponse{}, fmt.Errorf("%v Already Exists", duplicatedRecords)
 	}
 
+	hostRecords.Records = persistedRecords
+
+	nameCheapApiResponse, err := nc.apiManager.postHost(hostRecords)
+	if err != nil {
+		return internals.HostResponse{}, err
+	}
+
+	success := nameCheapApiResponse.CommandResponse.DomainDNSSetHostsResult.IsSuccess == "true"
+	if success {
+		nc.db.Data[newDomain] = hostRecords
+		log.Printf("%d Host Record Added: %d Total Hosts", len(data.Records), len(hostRecords.Records))
+	}
+
 	return internals.HostResponse{
-		Success: false,
-		Message: "Something Went Wrong",
+		Success: success,
+		Message: nameCheapApiResponse.Status,
 	}, nil
 }
 
 func (nc *Namecheap) DeleteSubDomain(data internals.HostData) (internals.HostResponse, error) {
 	newDomain := formDomain(data.SLD, data.TLD)
 
-	hostRecords, ok := nc.Data[newDomain]
+	hostRecords, ok := nc.db.Data[newDomain]
 	if !ok {
 		hostRecords = internals.HostData{
 			SLD:     data.SLD,
@@ -72,8 +94,19 @@ func (nc *Namecheap) DeleteSubDomain(data internals.HostData) (internals.HostRes
 		return internals.HostResponse{}, fmt.Errorf("%v Not Found", notFoundRecords)
 	}
 
+	nameCheapApiResponse, err := nc.apiManager.postHost(hostRecords)
+	if err != nil {
+		return internals.HostResponse{}, err
+	}
+
+	success := nameCheapApiResponse.CommandResponse.DomainDNSSetHostsResult.IsSuccess == "true"
+	if success {
+		nc.db.Data[newDomain] = hostRecords
+		log.Printf("%d Host Record Deleted: %d Total Hosts", len(data.Records), len(hostRecords.Records))
+	}
+
 	return internals.HostResponse{
-		Success: false,
-		Message: "Something Went Wrong",
+		Success: success,
+		Message: nameCheapApiResponse.Status,
 	}, nil
 }
