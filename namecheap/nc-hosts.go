@@ -10,14 +10,19 @@ import (
 type Namecheap struct {
 	db         *internals.PersistedHost
 	apiManager nameCheapAPI
+	managerKey string
 }
 
-func CreateNameCheapHostManager(db *internals.PersistedHost, isLive bool) *Namecheap {
-	return &Namecheap{db: db, apiManager: *createNameCheapAPI(isLive)}
+func CreateNameCheapHostManager(db *internals.PersistedHost, isLive bool, key string) *Namecheap {
+	return &Namecheap{db: db, apiManager: *createNameCheapAPI(isLive), managerKey: key}
 }
 
 func formDomain(sld, tld string) string {
 	return fmt.Sprintf("%s.%s", sld, tld)
+}
+
+func (nc *Namecheap) GetFactoryKey() string {
+	return nc.managerKey
 }
 
 func (nc *Namecheap) AddSubDomain(data internals.HostData) (internals.HostResponse, error) {

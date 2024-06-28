@@ -20,9 +20,13 @@ func (h HttpAPIServer) addSubDomain(w http.ResponseWriter, r *http.Request) {
 	}
 
 	env := chi.URLParam(r, "env")
-	isLive := env == "prod"
 
-	hostManager := h.getHostManagerService(isLive)
+	hostManager, err := h.hostFactory.GetManager(env)
+	if err != nil {
+		responseWithError(w, 400, fmt.Sprintf("%v", err))
+		return
+	}
+
 	response, err := hostManager.AddSubDomain(hostData)
 	if err != nil {
 		responseWithError(w, 400, fmt.Sprintf("Error Updating Sub-domain: %v", err))
@@ -43,9 +47,12 @@ func (h HttpAPIServer) deleteSubDomain(w http.ResponseWriter, r *http.Request) {
 	}
 
 	env := chi.URLParam(r, "env")
-	isLive := env == "prod"
+	hostManager, err := h.hostFactory.GetManager(env)
+	if err != nil {
+		responseWithError(w, 400, fmt.Sprintf("%v", err))
+		return
+	}
 
-	hostManager := h.getHostManagerService(isLive)
 	response, err := hostManager.DeleteSubDomain(hostData)
 	if err != nil {
 		responseWithError(w, 400, fmt.Sprintf("Error Updating Sub-domain: %v", err))

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/thrillee/namecheap-dns-manager/hostfactory"
 	"github.com/thrillee/namecheap-dns-manager/httpsvr"
 	"github.com/thrillee/namecheap-dns-manager/internals"
 	"github.com/thrillee/namecheap-dns-manager/namecheap"
@@ -33,13 +34,16 @@ func main() {
 		log.Fatal("PORT is not found in the env")
 	}
 
-	devNcManager := namecheap.CreateNameCheapHostManager(dev_hosts, false)
-	prodNcManager := namecheap.CreateNameCheapHostManager(prod_hosts, true)
+	devNcManager := namecheap.CreateNameCheapHostManager(dev_hosts, false, "nc-dev")
+	prodNcManager := namecheap.CreateNameCheapHostManager(prod_hosts, true, "nc-prod")
+
+	hostFactory := hostfactory.CreateNewHostFactory()
+	hostFactory.RegisterNewHostManager(devNcManager)
+	hostFactory.RegisterNewHostManager(prodNcManager)
 
 	httpServer := httpsvr.HttpAPIServer{
-		ListenAddr:  ":" + port,
-		DevService:  devNcManager,
-		ProdService: prodNcManager,
+		ListenAddr: ":" + port,
 	}
+	httpServer.MountFactory(hostFactory)
 	httpServer.Run()
 }

@@ -8,20 +8,16 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/thrillee/namecheap-dns-manager/internals"
+	"github.com/thrillee/namecheap-dns-manager/hostfactory"
 )
 
 type HttpAPIServer struct {
 	ListenAddr  string
-	ProdService internals.HostManger
-	DevService  internals.HostManger
+	hostFactory hostfactory.AbstractHostFactory
 }
 
-func (h HttpAPIServer) getHostManagerService(isLive bool) internals.HostManger {
-	if isLive {
-		return h.ProdService
-	}
-	return h.DevService
+func (h HttpAPIServer) MountFactory(hostFactory hostfactory.AbstractHostFactory) {
+	h.hostFactory = hostFactory
 }
 
 func (h HttpAPIServer) Run() {
