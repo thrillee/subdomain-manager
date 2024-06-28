@@ -6,7 +6,12 @@ import (
 )
 
 type PersistedHost struct {
-	Data map[string]HostData
+	Data     map[string]HostData
+	Filepath string
+}
+
+func (p *PersistedHost) Save() {
+	persistHosts(p.Filepath, p)
 }
 
 func GetPersistedHosts(file_path string) (*PersistedHost, error) {
@@ -21,10 +26,12 @@ func GetPersistedHosts(file_path string) (*PersistedHost, error) {
 		return nil, err
 	}
 
+	hostData.Filepath = file_path
+
 	return &hostData, nil
 }
 
-func PersistHosts(file_path string, hostData *PersistedHost) error {
+func persistHosts(file_path string, hostData *PersistedHost) error {
 	data, err := json.Marshal(hostData)
 	if err != nil {
 		return err
@@ -41,8 +48,8 @@ func PersistHosts(file_path string, hostData *PersistedHost) error {
 func GetOrNewHostStore(file_path string) (*PersistedHost, error) {
 	store, err := GetPersistedHosts(file_path)
 	if err != nil {
-		newStore := PersistedHost{Data: map[string]HostData{}}
-		err = PersistHosts(file_path, &newStore)
+		newStore := PersistedHost{Data: map[string]HostData{}, Filepath: file_path}
+		err = persistHosts(file_path, &newStore)
 		store = &newStore
 	}
 

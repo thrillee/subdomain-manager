@@ -5,6 +5,12 @@
 
 ### dotenv ###
 .env
+main
+/tmp
+dms*
+
+subdomain--dev-host.json
+subdomain--prod-host.json
 
 #!! ERROR: env is undefined. Use list command to see defined gitignore types !!#
 

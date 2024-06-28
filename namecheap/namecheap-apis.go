@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 
@@ -71,6 +70,8 @@ func (nc *nameCheapAPI) getAPIUsername() string {
 func (nc *nameCheapAPI) postHost(data internals.HostData) (nameCheapApiResponse, error) {
 	baseURL := nc.getUrl()
 
+	// log.Printf("\n\nInput: %v\n\n", data)
+
 	params := url.Values{}
 	params.Add("SLD", data.SLD)
 	params.Add("TLD", data.TLD)
@@ -88,7 +89,7 @@ func (nc *nameCheapAPI) postHost(data internals.HostData) (nameCheapApiResponse,
 	}
 
 	urlWithParams := fmt.Sprintf("%s?%s", baseURL, params.Encode())
-	fmt.Println(urlWithParams)
+	// fmt.Println(urlWithParams)
 
 	req, err := http.NewRequest("GET", urlWithParams, nil)
 	if err != nil {
@@ -105,11 +106,12 @@ func (nc *nameCheapAPI) postHost(data internals.HostData) (nameCheapApiResponse,
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
-	log.Printf("Response Body: \n %v \n", body)
 	if err != nil {
 		fmt.Printf("Error reading response body: %v\n", err)
 		return nameCheapApiResponse{}, err
 	}
+
+	// log.Printf("\n\nResponse Body: %v\n\n", string(body))
 
 	var response nameCheapApiResponse
 	err = xml.Unmarshal(body, &response)
@@ -117,7 +119,7 @@ func (nc *nameCheapAPI) postHost(data internals.HostData) (nameCheapApiResponse,
 		fmt.Println("Error unmarshalling XML: ", err)
 		return nameCheapApiResponse{}, err
 	}
-	log.Printf("Response Body: \n %v \n", response)
+	// log.Printf("Response Body: \n %v \n", response)
 
 	return response, err
 }

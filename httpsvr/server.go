@@ -16,11 +16,11 @@ type HttpAPIServer struct {
 	hostFactory hostfactory.AbstractHostFactory
 }
 
-func (h HttpAPIServer) MountFactory(hostFactory hostfactory.AbstractHostFactory) {
+func (h *HttpAPIServer) MountFactory(hostFactory hostfactory.AbstractHostFactory) {
 	h.hostFactory = hostFactory
 }
 
-func (h HttpAPIServer) Run() {
+func (h *HttpAPIServer) Run() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.RealIP)
@@ -39,7 +39,8 @@ func (h HttpAPIServer) Run() {
 
 	router := chi.NewRouter()
 	router.Post("/add-sd", middlewareWhitelistedIP(h.addSubDomain))
-	router.Post("/delete-sd", middlewareWhitelistedIP(h.addSubDomain))
+	router.Post("/list-sd", middlewareWhitelistedIP(h.listSubDomain))
+	router.Post("/delete-sd", middlewareWhitelistedIP(h.deleteSubDomain))
 
 	r.Mount("/api/{env}", router)
 
